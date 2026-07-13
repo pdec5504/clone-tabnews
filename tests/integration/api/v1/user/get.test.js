@@ -10,11 +10,30 @@ beforeAll(async () => {
 });
 
 describe("GET /api/v1/user", () => {
+  describe("Anonymous user", () => {
+    test("Retrieving the endpoint", async () => {
+      const response = await fetch("http://localhost:3000/api/v1/user");
+
+      expect(response.status).toBe(403);
+
+      const responseBody = await response.json();
+
+      expect(responseBody).toEqual({
+        name: "ForbiddenError",
+        message: "Você não possui permissão para executar esta ação.",
+        action: 'Verifique se o seu usuário possui a feature "read:session"',
+        status_code: 403,
+      });
+    });
+  });
+
   describe("Default user", () => {
     test("With valid session", async () => {
       const createdUser = await orchestrator.createUser({
         username: "UserWithValidSession",
       });
+
+      const activatedUser = await orchestrator.activateUser(createdUser);
 
       const sessionObject = await orchestrator.createSession(createdUser.id);
 
@@ -37,9 +56,9 @@ describe("GET /api/v1/user", () => {
         id: createdUser.id,
         username: "UserWithValidSession",
         email: createdUser.email,
-        password: createdUser.password,
+        features: ["create:session", "read:session", "update:user"],
         created_at: createdUser.created_at.toISOString(),
-        updated_at: createdUser.updated_at.toISOString(),
+        updated_at: activatedUser.updated_at.toISOString(),
       });
 
       expect(uuidVersion(responseBody.id)).toBe(4);
@@ -81,13 +100,15 @@ describe("GET /api/v1/user", () => {
         username: "UserWithHalfwayExpiredSession",
       });
 
+      const activatedUser = await orchestrator.activateUser(createdUser);
+
       const sessionObject = await orchestrator.createSession(createdUser.id);
 
       jest.useRealTimers();
 
       const response = await fetch("http://localhost:3000/api/v1/user", {
         headers: {
-          Cookie: `session_id=${sessionObject.token}`,
+          cookie: `session_id=${sessionObject.token}`,
         },
       });
 
@@ -99,9 +120,9 @@ describe("GET /api/v1/user", () => {
         id: createdUser.id,
         username: "UserWithHalfwayExpiredSession",
         email: createdUser.email,
-        password: createdUser.password,
+        features: ["create:session", "read:session", "update:user"],
         created_at: createdUser.created_at.toISOString(),
-        updated_at: createdUser.updated_at.toISOString(),
+        updated_at: activatedUser.updated_at.toISOString(),
       });
 
       expect(uuidVersion(responseBody.id)).toBe(4);
@@ -120,7 +141,7 @@ describe("GET /api/v1/user", () => {
         renewedSessionObject.updated_at > sessionObject.updated_at,
       ).toEqual(true);
 
-      // Set-Cookie assertions
+      // Set‑Cookie assertions
       const parsedSetCookie = setCookieParser(response, {
         map: true,
       });
@@ -136,11 +157,11 @@ describe("GET /api/v1/user", () => {
 
     test("With nonexistent session", async () => {
       const nonexistentToken =
-        "00b8d6a60e88f86e429894c5a4d35dfa05a30f1d712a7191f57dec47dd5ea0f23e756946211f91710b4af2c997c8a5c3";
+        "f0b62a5ff97ae607701ceeee2e3c4987c4b9debb534410e2444f9eb2288b6e3b90158a71d086e31eabef9b36cbb549e1";
 
       const response = await fetch("http://localhost:3000/api/v1/user", {
         headers: {
-          Cookie: `session_id=${nonexistentToken}`,
+          cookie: `session_id=${nonexistentToken}`,
         },
       });
 
@@ -150,7 +171,7 @@ describe("GET /api/v1/user", () => {
 
       expect(responseBody).toEqual({
         name: "UnauthorizedError",
-        message: "Usuário não possui sessão ativa",
+        message: "Usuário não possui sessão ativa.",
         action: "Verifique se este usuário está logado e tente novamente.",
         status_code: 401,
       });
@@ -194,7 +215,7 @@ describe("GET /api/v1/user", () => {
 
       expect(responseBody).toEqual({
         name: "UnauthorizedError",
-        message: "Usuário não possui sessão ativa",
+        message: "Usuário não possui sessão ativa.",
         action: "Verifique se este usuário está logado e tente novamente.",
         status_code: 401,
       });
