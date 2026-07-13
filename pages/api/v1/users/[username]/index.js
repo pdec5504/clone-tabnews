@@ -15,7 +15,7 @@ export default router.handler(controller.errorHandlers);
 async function getHandler(request, response) {
   const userTryingToGet = request.context.user;
   const username = request.query.username;
-  const userFound = await user.findOneByUSername(username);
+  const userFound = await user.findOneByUsername(username);
 
   const secureOutputValues = authorization.filterOutput(
     userTryingToGet,

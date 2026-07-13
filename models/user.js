@@ -10,17 +10,18 @@ async function findOneById(id) {
   async function runSelectQuery(id) {
     const results = await database.query({
       text: `
-          SELECT
-            *
-          FROM 
-            users
-          WHERE
-            id = $1
-          LIMIT
-            1
-          ;`,
+        SELECT
+          *
+        FROM
+          users
+        WHERE
+          id = $1
+        LIMIT
+          1
+        ;`,
       values: [id],
     });
+
     if (results.rowCount === 0) {
       throw new NotFoundError({
         message: "O id informado não foi encontrado no sistema.",
@@ -32,7 +33,7 @@ async function findOneById(id) {
   }
 }
 
-async function findOneByUSername(username) {
+async function findOneByUsername(username) {
   const userFound = await runSelectQuery(username);
 
   return userFound;
@@ -40,17 +41,18 @@ async function findOneByUSername(username) {
   async function runSelectQuery(username) {
     const results = await database.query({
       text: `
-          SELECT
-            *
-          FROM 
-            users
-          WHERE
-            LOWER(username) = LOWER($1)
-          LIMIT
-            1
-          ;`,
+        SELECT
+          *
+        FROM
+          users
+        WHERE
+          LOWER(username) = LOWER($1)
+        LIMIT
+          1
+        ;`,
       values: [username],
     });
+
     if (results.rowCount === 0) {
       throw new NotFoundError({
         message: "O username informado não foi encontrado no sistema.",
@@ -70,17 +72,18 @@ async function findOneByEmail(email) {
   async function runSelectQuery(email) {
     const results = await database.query({
       text: `
-          SELECT
-            *
-          FROM 
-            users
-          WHERE
-            LOWER(email) = LOWER($1)
-          LIMIT
-            1
-          ;`,
+        SELECT
+          *
+        FROM
+          users
+        WHERE
+          LOWER(email) = LOWER($1)
+        LIMIT
+          1
+        ;`,
       values: [email],
     });
+
     if (results.rowCount === 0) {
       throw new NotFoundError({
         message: "O email informado não foi encontrado no sistema.",
@@ -104,13 +107,13 @@ async function create(userInputValues) {
   async function runInsertQuery(userInputValues) {
     const results = await database.query({
       text: `
-          INSERT INTO
-            users (username, email, password, features) 
-          VALUES 
-            ($1, $2, $3, $4)
-          RETURNING
-            *
-          ;`,
+        INSERT INTO
+          users (username, email, password, features)
+        VALUES
+          ($1, $2, $3, $4)
+        RETURNING
+          *
+        ;`,
       values: [
         userInputValues.username,
         userInputValues.email,
@@ -127,7 +130,7 @@ async function create(userInputValues) {
 }
 
 async function update(username, userInputValues) {
-  const currentUser = await findOneByUSername(username);
+  const currentUser = await findOneByUsername(username);
 
   if ("username" in userInputValues) {
     await validateUniqueUsername(userInputValues.username);
@@ -149,17 +152,17 @@ async function update(username, userInputValues) {
   async function runUpdateQuery(userWithNewValues) {
     const results = await database.query({
       text: `
-      UPDATE
-        users
-      SET 
-        username = $2,
-        email = $3,
-        password = $4,
-        updated_at = timezone('utc', now())
-      WHERE 
-        id = $1
-      RETURNING
-        *
+        UPDATE
+          users
+        SET
+          username = $2,
+          email = $3,
+          password = $4,
+          updated_at = timezone('utc', now())
+        WHERE
+          id = $1
+        RETURNING
+          *
       `,
       values: [
         userWithNewValues.id,
@@ -176,19 +179,20 @@ async function update(username, userInputValues) {
 async function validateUniqueUsername(username) {
   const results = await database.query({
     text: `
-          SELECT
-            username
-          FROM 
-            users
-          WHERE
-            LOWER(username) = LOWER($1)
-          ;`,
+      SELECT
+        username
+      FROM
+        users
+      WHERE
+        LOWER(username) = LOWER($1)
+      ;`,
     values: [username],
   });
+
   if (results.rowCount > 0) {
     throw new ValidationError({
-      message: "O usuário informado já está sendo utilizado.",
-      action: "Utilize outro username para realizar essa operação.",
+      message: "O username informado já está sendo utilizado.",
+      action: "Utilize outro username para realizar esta operação.",
     });
   }
 }
@@ -196,19 +200,20 @@ async function validateUniqueUsername(username) {
 async function validateUniqueEmail(email) {
   const results = await database.query({
     text: `
-          SELECT
-            email
-          FROM 
-            users
-          WHERE
-            LOWER(email) = LOWER($1)
-          ;`,
+      SELECT
+        email
+      FROM
+        users
+      WHERE
+        LOWER(email) = LOWER($1)
+      ;`,
     values: [email],
   });
+
   if (results.rowCount > 0) {
     throw new ValidationError({
       message: "O email informado já está sendo utilizado.",
-      action: "Utilize outro email para realizar essa operação.",
+      action: "Utilize outro email para realizar esta operação.",
     });
   }
 }
@@ -269,9 +274,9 @@ async function addFeatures(userId, features) {
 const user = {
   create,
   findOneById,
-  findOneByUSername,
-  update,
+  findOneByUsername,
   findOneByEmail,
+  update,
   setFeatures,
   addFeatures,
 };
